@@ -1,0 +1,6 @@
+To build the file, just put all the files in a single directory,
+and run the "cla.py" with a single parameter <input_filename>. The input filename must ends with ".ou"
+This will create an output file with the same name as the input file, but ends with ".tok", and shows all the lexems.
+
+Good luck,
+Rea Haas.
