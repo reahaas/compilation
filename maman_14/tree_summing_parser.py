@@ -6,8 +6,8 @@ from maman_14.tree_summing_lexer import TreeSummingLexer, print_err
 
 
 def size_of_tree(tree):
-    if type(tree) == int:
-        return 1
+    if type(tree) == TreeSumming:
+        return tree.size
 
     return 1 + sum([size_of_tree(son) for son in tree])
 
@@ -17,7 +17,7 @@ def sum_parity_tree(tree_list, parity):
     #     return 0
     # if len(tree_list) == 1 and tree_list[0] is None:
     #     return 1
-    return sum([son for son in tree_list if son % 2 == parity])
+    return sum([son.value for son in tree_list if son.value % 2 == parity])
 
 
 def sum_odd_tree(tree_list):
@@ -26,7 +26,7 @@ def sum_odd_tree(tree_list):
 
 
 def sum_even_tree(tree_list):
-    EVEN = 1
+    EVEN = 0
     return sum_parity_tree(tree_list, parity=EVEN)
 
 
@@ -37,13 +37,18 @@ class TreeSumming():
 
 
 class TreeSummingParser(Parser):
+    """
+    This class parse the summing tree defined in maman_14 question 2.
+    The parsing define
+    """
+
     # Get the token list from the lexer (required)
     tokens = TreeSummingLexer.tokens
 
     # Grammar rules and actions
     @_('tree')
     def S(self, p):
-        return p.tree
+        return p.tree.value
 
     @_('IGNORE LPAREN tree_list RPAREN')
     def S(self, p):
@@ -51,23 +56,24 @@ class TreeSummingParser(Parser):
 
     @_('SUM_ODD LPAREN tree_list RPAREN')
     def tree(self, p):
-        return sum_odd_tree(p.tree_list)
+        return TreeSumming(value=sum_odd_tree(p.tree_list), size=size_of_tree(p.tree_list))
 
     @_('SUM_EVEN LPAREN tree_list RPAREN')
     def tree(self, p):
-        return sum_even_tree(p.tree_list)
+        return TreeSumming(value=sum_even_tree(p.tree_list), size=size_of_tree(p.tree_list))
 
     @_('SIZE LPAREN tree_list RPAREN')
     def tree(self, p):
-        return size_of_tree(p.tree_list)
+        tree_list_size = size_of_tree(p.tree_list)
+        return TreeSumming(value=tree_list_size, size=tree_list_size)
 
     @_('IGNORE LPAREN tree_list RPAREN')
     def tree(self, p):
-        return 0
+        return TreeSumming(value=0, size=size_of_tree(p.tree_list))
 
     @_('NUMBER')
     def tree(self, p):
-        return int(p.NUMBER)  # TreeSumming(value=p.NUMBER, size=1)
+        return TreeSumming(value=int(p.NUMBER), size=1)  # TreeSumming(value=p.NUMBER, size=1)
 
     @_('tree_list tree')
     def tree_list(self, p):
