@@ -40,6 +40,51 @@ class TreeSummingParser(Parser):
     """
     This class parse the summing tree defined in maman_14 question 2.
     The parsing define
+
+    The translation scheme is:
+
+    Built features:
+    value: The value of the tree.
+    size: The size of the tree.
+
+    Inherited features:
+    None
+
+    0. S' -> S                       { if S.value == ignore:
+                                           raise exception
+                                       else:
+                                           print(S.value)
+                                     }
+
+    1. S -> tree                     { S.value = tree.value
+                                       S.size = tree.size
+                                     }
+
+    2. tree -> SUM_ODD ( treelist )  { tree.value = sum(tree.value for tree in treelist if
+                                                        is_odd(tree.value))
+                                       tree.size = sum(tree.size for tree in treelist)
+                                     }
+
+    3. tree -> SUM_EVEN ( treelist ) { tree.value = sum(tree.value for tree in treelist if
+                                                        is_even(tree.value))
+                                       tree.size = sum(tree.size for tree in treelist)
+                                     }
+
+    4. tree -> SIZE ( treelist )     { tree.value = sum(tree.size for tree in treelist)
+                                       tree.size = sum(tree.size for tree in treelist)
+                                     }
+
+    5. tree -> IGNORE ( treelist )   { tree.value = 0
+                                       tree.size = sum(tree.size for tree in treelist)
+                                     }
+
+    6. tree -> NUMBER                { tree.value = NUMBER.value
+                                       tree.size = 1
+                                     }
+
+    7. treelist -> treelist_1 tree   { treelist.value = treelist_1 + [tree] }
+
+    8. treelist -> tree              { treelist.value = [tree] }
     """
 
     # Get the token list from the lexer (required)
@@ -73,7 +118,7 @@ class TreeSummingParser(Parser):
 
     @_('NUMBER')
     def tree(self, p):
-        return TreeSumming(value=int(p.NUMBER), size=1)  # TreeSumming(value=p.NUMBER, size=1)
+        return TreeSumming(value=int(p.NUMBER), size=1)
 
     @_('tree_list tree')
     def tree_list(self, p):
