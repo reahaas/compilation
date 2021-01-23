@@ -1,0 +1,4 @@
+value: 10, size: 3, tree: sum_even([4, 6])
+value: 3, size: 3, tree: size([3, 4])
+value: 22, size: 10, tree: sum_odd([5, 7, 10, 7, 3])
+Results: 22

@@ -101,20 +101,31 @@ class TreeSummingParser(Parser):
 
     @_('SUM_ODD LPAREN tree_list RPAREN')
     def tree(self, p):
-        return TreeSumming(value=sum_odd_tree(p.tree_list), size=size_of_tree(p.tree_list))
+        results = TreeSumming(value=sum_odd_tree(p.tree_list), size=size_of_tree(p.tree_list))
+        print(f"value: {results.value}, size: {results.size}, "
+              f"tree: {p.SUM_ODD + p.LPAREN + str([t. value for t in p.tree_list]) + p.RPAREN}")
+        return results
 
     @_('SUM_EVEN LPAREN tree_list RPAREN')
     def tree(self, p):
-        return TreeSumming(value=sum_even_tree(p.tree_list), size=size_of_tree(p.tree_list))
+        results = TreeSumming(value=sum_even_tree(p.tree_list), size=size_of_tree(p.tree_list))
+        print(f"value: {results.value}, size: {results.size}, "
+              f"tree: {p.SUM_EVEN + p.LPAREN + str([t.value for t in p.tree_list]) + p.RPAREN}")
+        return results
 
     @_('SIZE LPAREN tree_list RPAREN')
     def tree(self, p):
         tree_list_size = size_of_tree(p.tree_list)
+        print(f"value: {tree_list_size}, size: {tree_list_size}, "
+              f"tree: {p.SIZE + p.LPAREN + str([t.value for t in p.tree_list]) + p.RPAREN}")
         return TreeSumming(value=tree_list_size, size=tree_list_size)
 
     @_('IGNORE LPAREN tree_list RPAREN')
     def tree(self, p):
-        return TreeSumming(value=0, size=size_of_tree(p.tree_list))
+        results = TreeSumming(value=0, size=size_of_tree(p.tree_list))
+        print(f"value: {results.value}, size: {results.size}, "
+              f"tree: {p.IGNORE + p.LPAREN + str([t.value for t in p.tree_list]) + p.RPAREN}")
+        return results
 
     @_('NUMBER')
     def tree(self, p):
@@ -140,19 +151,18 @@ def main(file_name):
     lexer = TreeSummingLexer()
     parser = TreeSummingParser()
 
-    # original_stdout = sys.stdout  # Save a reference to the original standard output
+    original_stdout = sys.stdout  # Save a reference to the original standard output
 
     file_name_w = file_name.rstrip(".txt") + ".par"
     with open(file_name_w, 'w') as f:
-        # sys.stdout = f  # Change the standard output to the file we created.
-        # for tok in lexer.tokenize(input_text):
-        #     print('type=%r, value=%r' % (tok.type, tok.value))
+        sys.stdout = f  # Change the standard output to the file we created.
 
         result = parser.parse(lexer.tokenize(input_text))
+        f.write(f"Results: {str(result)}")
+
+        sys.stdout = original_stdout  # Reset the standard output to its original value
         print(result)
         print("Student: Rea Haas")
-
-        # sys.stdout = original_stdout  # Reset the standard output to its original value
 
 
 if __name__ == '__main__':
