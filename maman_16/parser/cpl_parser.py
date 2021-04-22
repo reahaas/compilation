@@ -1,9 +1,13 @@
 from sly import Parser
 
-from maman_16.lexer.cpl_lexer import CplLexer
+from maman_16.lexer.cpl_lexer import CplLexer, print_err
 
 
-class TreeSummingParser(Parser):
+def parser_error(message, p):
+    print_err(f"PARSER error: line number: {p.lineno}, {message}, {p}")
+
+
+class CplParser(Parser):
     """
     This class parse the CPL language defined in maman_16.
 
@@ -20,7 +24,8 @@ class TreeSummingParser(Parser):
     # Get the token list from the lexer (required)
     tokens = CplLexer.tokens
 
-
+    # tokens.union(CplLexer.literals)
+    # literals = CplLexer.literals
 
     @_("declarations stmt_block")
     def program(self, p):
@@ -34,25 +39,33 @@ class TreeSummingParser(Parser):
     def declarations(self, p):
         pass
 
-    @_("idlist : type ;")
+    @_("idlist ':' type ';'")
     def declaration(self, p):
-        pass
+        ids = []
+        for id in p.idlist:
+            ids.append(id)
+
+        if p.type in ["int", "float"]:
+            variable_type = p.type
+        else:
+            parser_error(f"type is not defined: {p.type}", p)
+            return
 
     @_("INT")
     def type(self, p):
-        pass
+        return "int"
 
     @_("FLOAT")
     def type(self, p):
-        pass
+        return "float"
 
-    @_("idlist , ID")
+    @_("idlist ',' ID")
     def idlist(self, p):
-        pass
+        return p.idlist + [p.ID]
 
     @_("ID")
     def idlist(self, p):
-        pass
+        return [p.ID]
 
     @_("assignment_stmt")
     def stmt(self, p):
@@ -85,31 +98,32 @@ class TreeSummingParser(Parser):
     @_("stmt_block")
     def stmt(self, p):
         pass
-    @_("ID = expression ;")
+
+    @_("ID '=' expression ';'")
     def assignment_stmt(self, p):
         pass
 
-    @_("INPUT ( ID ) ;")
+    @_("INPUT '(' ID ')' ';'")
     def input_stmt(self, p):
-        pass
+        id_type = p.ID
 
-    @_("OUTPUT ( expression ) ;")
+    @_("OUTPUT '(' expression ')' ';'")
     def output_stmt(self, p):
         pass
 
-    @_("IF ) boolexpr ( stmt ELSE stmt")
+    @_("IF '(' boolexpr ')' stmt ELSE stmt")
     def if_stmt(self, p):
         pass
 
-    @_("WHILE ) boolexpr ( stmt")
+    @_("WHILE '(' boolexpr ')' stmt")
     def while_stmt(self, p):
         pass
 
-    @_("SWITCH ( expression ) { caselist DEFAULT ':' stmtlist '}'")
+    @_("SWITCH '(' expression ')' '{' caselist DEFAULT ':' stmtlist '}'")
     def switch_stmt(self, p):
         pass
 
-    @_("caselist CASE NUM : stmtlist")
+    @_("caselist CASE NUM ':' stmtlist")
     def caselist(self, p):
         pass
 
@@ -117,11 +131,11 @@ class TreeSummingParser(Parser):
     def caselist(self, p):
         pass
 
-    @_("BREAK ;")
+    @_("BREAK ';'")
     def break_stmt(self, p):
         pass
 
-    @_("{ stmtlist }")
+    @_("'{' stmtlist '}'")
     def stmt_block(self, p):
         pass
 
@@ -132,6 +146,7 @@ class TreeSummingParser(Parser):
     @_("")  # epsilon
     def stmtlist(self, p):
         pass
+
     @_("boolexpr OR boolterm")
     def boolexpr(self, p):
         pass
@@ -147,7 +162,8 @@ class TreeSummingParser(Parser):
     @_("boolfactor")
     def boolterm(self, p):
         pass
-    @_("NOT ( boolexpr )")
+
+    @_("NOT '(' boolexpr ')'")
     def boolfactor(self, p):
         pass
 
@@ -162,6 +178,7 @@ class TreeSummingParser(Parser):
     @_("term")
     def expression(self, p):
         pass
+
     @_("term MULOP factor")
     def term(self, p):
         pass
@@ -169,11 +186,12 @@ class TreeSummingParser(Parser):
     @_("factor")
     def term(self, p):
         pass
-    @_("( expression )")
+
+    @_("'(' expression ')'")
     def factor(self, p):
         pass
 
-    @_("CAST ( expression )")
+    @_("CAST '(' expression ')'")
     def factor(self, p):
         pass
 

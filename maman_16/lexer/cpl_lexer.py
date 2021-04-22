@@ -97,41 +97,5 @@ class CplLexer(Lexer):
 
     # Error handling rule
     def error(self, t):
-        print_err("line: '{l}', Illegal character '{c}'".format(l=self.lineno, c=t.value[0]))
+        print_err("LEXER error: line: '{l}', Illegal character '{c}'".format(l=self.lineno, c=t.value[0]))
         self.index += 1
-
-
-def main(file_name):
-    try:
-        with open(file_name) as input_file:
-            input_text = input_file.read()
-    except IOError as e:
-        print(f"can't read {file_name}")
-        raise e
-
-    lexer = CplLexer()
-
-    original_stdout = sys.stdout  # Save a reference to the original standard output
-
-    file_name_w = file_name.rstrip(".ou") + ".tok"
-    with open(file_name_w, 'w') as f:
-        sys.stdout = f  # Change the standard output to the file we created.
-
-        for tok in lexer.tokenize(input_text):
-            print('type=%r, value=%r' % (tok.type, tok.value))
-        print("Student: Rea Haas")
-
-        sys.stdout = original_stdout  # Reset the standard output to its original value
-
-
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print("The program expect a single parameter, which is the input file name")
-        exit(1)
-    file_name = sys.argv[1]
-    if not file_name.endswith(".ou"):
-        print(f"The input file name must ends with \".ou\" given: {file_name}")
-        exit(1)
-
-    main(file_name)
-    print_err("Student: Rea Haas")
