@@ -65,7 +65,7 @@ class CplLexer(Lexer):
 
     # more tokens
     ID = r'[a-zA-Z_][a-zA-Z0-9_]*'
-    NUM = r'\d+ |\d\.\d* '
+    NUM = r'\d+(\.\d*)?'
 
     # keywords:
     ID['break'] = BREAK
