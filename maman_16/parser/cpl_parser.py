@@ -1,10 +1,43 @@
 from sly import Parser
 
 from maman_16.lexer.cpl_lexer import CplLexer, print_err
+from maman_16.parser.consts import QUAD_OPCODES
 
 
 def parser_error(message, p):
     print_err(f"PARSER error: line number: {p.lineno}, {message}, {p}")
+
+
+class expression():
+    def __init__(self, type, value):
+        self.type = type
+        self.value = value
+
+
+variables_type_dict = {}
+
+
+def quad_code(code_operation):
+    """
+    This method warp the print function to prints the code operation that we want to generate.
+    :param code_operation:
+    :return:
+    """
+    def validate_quad_syntax():
+        if type(code_operation) is not str:
+            print_err("code_operation should be string")
+            return False
+        elif len(code_operation.split()) > 3:
+            print_err("code_operation can't be longer than 3 words")
+            return False
+        elif code_operation.split()[0] not in QUAD_OPCODES:
+            print_err(f"OPCODE {code_operation.split()[0]} is not define")
+            return False
+        else:
+            return True
+
+    if validate_quad_syntax():
+        print(code_operation)
 
 
 class CplParser(Parser):
@@ -29,7 +62,8 @@ class CplParser(Parser):
 
     @_("declarations stmt_block")
     def program(self, p):
-        pass
+        # todo remove the print.
+        print(f"declarations: {variables_type_dict}")
 
     @_("declarations declaration")
     def declarations(self, p):
@@ -41,15 +75,17 @@ class CplParser(Parser):
 
     @_("idlist ':' type ';'")
     def declaration(self, p):
-        ids = []
-        for id in p.idlist:
-            ids.append(id)
-
         if p.type in ["int", "float"]:
             variable_type = p.type
         else:
             parser_error(f"type is not defined: {p.type}", p)
             return
+
+        for id in p.idlist:
+            if id not in variables_type_dict:
+                variables_type_dict[id] = variable_type
+            else:
+                parser_error("variable already declared, can't declare it again.")
 
     @_("INT")
     def type(self, p):
@@ -101,11 +137,23 @@ class CplParser(Parser):
 
     @_("ID '=' expression ';'")
     def assignment_stmt(self, p):
-        pass
+        if p.ID not in variables_type_dict:
+            print_err(f"Variable not defined: {p.ID}")
+        elif variables_type_dict[p.ID] == p.expression.type:
+            opdoce = "IASN" if variables_type_dict[p.ID] == "int" else "RASN"
+            quad_code(f"{opdoce} {p.ID} {p.expression.value}")
+        elif variables_type_dict[p.ID] == "float":
+            quad_code(f"IASN {p.ID} {float(p.expression.value)}")
+        else:
+            print_err(f"Can't assign float value {p.expression.value} to int variable {p.ID}")
 
     @_("INPUT '(' ID ')' ';'")
     def input_stmt(self, p):
-        id_type = p.ID
+        if p.ID not in variables_type_dict:
+            print_err(f"Variable not defined: {p.ID}")
+        else:
+            opdoce = "IINP" if variables_type_dict[p.ID] == "int" else "RINP"
+            quad_code(f"{opdoce} {p.ID}")
 
     @_("OUTPUT '(' expression ')' ';'")
     def output_stmt(self, p):
