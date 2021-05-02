@@ -157,7 +157,11 @@ class CplParser(Parser):
 
     @_("OUTPUT '(' expression ')' ';'")
     def output_stmt(self, p):
-        pass
+        if p.ID not in variables_type_dict:
+            print_err(f"Variable not defined: {p.ID}")
+        else:
+            opdoce = "IPRT" if variables_type_dict[p.ID] == "int" else "RPRT"
+            quad_code(f"{opdoce} {p.ID}")
 
     @_("IF '(' boolexpr ')' stmt ELSE stmt")
     def if_stmt(self, p):
