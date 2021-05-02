@@ -8,7 +8,7 @@ def parser_error(message, p):
     print_err(f"PARSER error: line number: {p.lineno}, {message}, {p}")
 
 
-class expression():
+class Expression():
     def __init__(self, type, value):
         self.type = type
         self.value = value
@@ -157,11 +157,8 @@ class CplParser(Parser):
 
     @_("OUTPUT '(' expression ')' ';'")
     def output_stmt(self, p):
-        if p.ID not in variables_type_dict:
-            print_err(f"Variable not defined: {p.ID}")
-        else:
-            opdoce = "IPRT" if variables_type_dict[p.ID] == "int" else "RPRT"
-            quad_code(f"{opdoce} {p.ID}")
+        opdoce = "IPRT" if p.Expression.type == "int" else "RPRT"
+        quad_code(f"{opdoce} {p.Expression.value}")
 
     @_("IF '(' boolexpr ')' stmt ELSE stmt")
     def if_stmt(self, p):
@@ -253,4 +250,6 @@ class CplParser(Parser):
 
     @_("NUM")
     def factor(self, p):
-        pass
+        num_type = "float" if "." in p.NUM else "int"
+        value = int(p.NUM) if num_type is "int" else float(p.NUM)
+        return Expression(num_type, value)
