@@ -1,4 +1,2 @@
 RINP a
 RINP b
-declarations: {'a': 'float', 'b': 'float'}
-Results: None
