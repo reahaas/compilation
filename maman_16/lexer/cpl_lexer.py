@@ -77,7 +77,6 @@ class CplLexer(Lexer):
     ID['input'] = INPUT
     ID['int'] = INT
     ID['output'] = OUTPUT
-    ID['static_cast'] = STATIC_CAST
     ID['switch'] = SWITCH
     ID['while'] = WHILE
 
