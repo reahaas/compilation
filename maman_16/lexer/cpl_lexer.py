@@ -24,7 +24,6 @@ class CplLexer(Lexer):
         INPUT,
         INT,
         OUTPUT,
-        STATIC_CAST,
         SWITCH,
         WHILE,
 
@@ -63,6 +62,15 @@ class CplLexer(Lexer):
 
     # Regular expression rules for tokens
 
+    # operators:
+    RELOP = r'==|!=|<|>|>=|<='
+    ADDOP = r'\+|-'
+    MULOP = r'\*|/'
+    OR = r'\|\|'
+    AND = r'&&'
+    NOT = r'!'
+    CAST = r'static_cast<int>|static_cast<float>'
+
     # more tokens
     ID = r'[a-zA-Z_][a-zA-Z0-9_]*'
     NUM = r'\d+(\.\d*)?'
@@ -80,14 +88,6 @@ class CplLexer(Lexer):
     ID['switch'] = SWITCH
     ID['while'] = WHILE
 
-    # operators:
-    RELOP = r'==|!=|<|>|>=|<='
-    ADDOP = r'\+|-'
-    MULOP = r'\*|/'
-    OR = r'\|\|'
-    AND = r'&&'
-    NOT = r'!'
-    CAST = r'static_cast<int>|static_cast<float>'
 
     # Define a rule so we can track line numbers
     @_(r'\n+')

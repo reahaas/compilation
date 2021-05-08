@@ -2,4 +2,35 @@ RASN t_1 3.2
 RASN a t_1
 IASN t_2 8
 IASN j t_2
-Results: None
+RASN t_3 a
+RTOI t_4 t_3
+IASN i t_4
+IASN t_5 i
+IPRT i
+IASN t_6 j
+IASN i t_6
+IASN t_7 i
+IPRT i
+IASN t_8 16
+IASN i t_8
+IASN t_9 i
+ITOR t_10 t_9
+RASN a t_10
+RASN t_11 a
+RPRT a
+RASN t_12 17.0
+RASN b t_12
+RASN t_13 b
+RASN a t_13
+RASN t_14 a
+RPRT a
+RASN t_15 18.9
+RASN b t_15
+RASN t_16 b
+RTOI t_17 t_16
+ITOR t_18 t_17
+RASN a t_18
+RASN t_19 a
+RPRT a
+HALT
+Student: Rea Haas

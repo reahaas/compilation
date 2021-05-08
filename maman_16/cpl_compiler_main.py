@@ -24,7 +24,9 @@ def main(file_name):
         sys.stdout = f  # Change the standard output to the file we created.
 
         result = parser.parse(lexer.tokenize(input_text))
-        f.write(f"Results: {str(result)}")
+        # f.write(f"Results: {str(result)}")
+        f.write("HALT\n")
+        f.write("Student: Rea Haas")
 
         sys.stdout = original_stdout  # Reset the standard output to its original value
         print(result)

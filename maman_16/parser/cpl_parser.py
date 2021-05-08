@@ -92,7 +92,8 @@ class CplParser(Parser):
     @_("declarations stmt_block")
     def program(self, p):
         # todo remove the print.
-        print(f"declarations: {variables_type_dict}")
+        #print(f"declarations: {variables_type_dict}")
+        pass
 
     @_("declarations declaration")
     def declarations(self, p):
@@ -167,14 +168,20 @@ class CplParser(Parser):
     @_("ID '=' expression ';'")
     def assignment_stmt(self, p):
         if p.ID not in variables_type_dict:
-            parser_error(f"Variable not defined: {p.ID}")
+            parser_error(f"Variable not defined: {p.ID}", p)
         elif variables_type_dict[p.ID] == p.expression.type:
             opdoce = "IASN" if variables_type_dict[p.ID] == "int" else "RASN"
             quad_code(f"{opdoce} {p.ID} {p.expression.temp}")
         elif variables_type_dict[p.ID] == "float":
-            quad_code(f"IASN {p.ID} {float(p.expression.temp)}")
+            if p.expression.type == "int":
+                opcode = "ITOR"
+                temp_real = next(g_generate_temp_variable_name)
+                quad_code(f"{opcode} {temp_real} {p.expression.temp}")
+            else:
+                temp_real = p.expression.temp
+            quad_code(f"RASN {p.ID} {temp_real}")
         else:
-            parser_error(f"Can't assign float value {p.expression.temp} to int variable {p.ID}")
+            parser_error(f"Can't assign float value {p.expression.temp} to int variable {p.ID}", p)
 
     @_("INPUT '(' ID ')' ';'")
     def input_stmt(self, p):
@@ -186,8 +193,8 @@ class CplParser(Parser):
 
     @_("OUTPUT '(' expression ')' ';'")
     def output_stmt(self, p):
-        opdoce = "IPRT" if p.Expression.type == "int" else "RPRT"
-        value = temp_variables_type_dict[p.Expression.temp]
+        opdoce = "IPRT" if p.expression.type == "int" else "RPRT"
+        value = temp_variables_type_dict[p.expression.temp]
         quad_code(f"{opdoce} {value}")
 
     @_("IF '(' boolexpr ')' stmt ELSE stmt")
@@ -282,13 +289,25 @@ class CplParser(Parser):
 
     @_("CAST '(' expression ')'")
     def factor(self, p):
-        # todo:
-        pass
+        # if p.CAST == "static_cast<int>" and p.expression.type:
+        #     pass
+        num_type = "int" if p.CAST =="static_cast<int>" else "float"
+
+        # If there is no need for casting, return the original expression.
+        if num_type == p.expression.type:
+            return p.expression
+
+        opcode = "RTOI" if num_type == "int" else "ITOR"
+        temp = next(g_generate_temp_variable_name)
+        quad_code(f"{opcode} {temp} {p.expression.temp}")
+
+        return Expression(num_type, temp)
 
     @_("ID")
     def factor(self, p):
         num_type = variables_type_dict[p.ID]
-        value = int(p.ID) if num_type == "int" else float(p.ID)
+
+        value = p.ID
         temp = next(g_generate_temp_variable_name)
         temp_variables_type_dict[temp] = value
 
