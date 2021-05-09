@@ -1,0 +1,56 @@
+RASN t_1 2.25
+RASN a t_1
+IASN t_2 4
+IASN i t_2
+RASN t_3 a
+IASN t_4 i
+ITOR t_5 t_4
+RADD t_6 t_3 t_5
+RPRT t_6
+RASN t_7 a
+IASN t_8 i
+ITOR t_9 t_8
+RSUB t_10 t_7 t_9
+RPRT t_10
+IASN t_11 i
+RASN t_12 a
+ITOR t_13 t_11
+RMLT t_14 t_13 t_12
+RASN b t_14
+RASN t_15 b
+RPRT b
+RASN t_16 b
+IASN t_17 i
+ITOR t_18 t_17
+RDIV t_19 t_16 t_18
+RASN b t_19
+RASN t_20 b
+RPRT b
+RASN t_21 3.0
+RASN t_22 5.8
+RADD t_23 t_21 t_22
+RTOI t_24 t_23
+IASN i t_24
+IASN t_25 i
+IPRT i
+IASN t_26 3
+IASN t_27 5
+IADD t_28 t_26 t_27
+IASN i t_28
+IASN t_29 i
+IPRT i
+IASN t_30 3
+IASN t_31 5
+IADD t_32 t_30 t_31
+ITOR t_33 t_32
+RASN a t_33
+RASN t_34 a
+RPRT a
+RASN t_35 3.0
+RASN t_36 5.0
+RADD t_37 t_35 t_36
+RASN a t_37
+RASN t_38 a
+RPRT a
+HALT
+Student: Rea Haas

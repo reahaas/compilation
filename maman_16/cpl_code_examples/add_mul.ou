@@ -1,7 +1,7 @@
 /* test implicit/explicit type conversions and opperations: add, minus, mul, div */
 
-int  i, j;
-float a, b;
+i, j: int;
+a, b: float;
 
 {
    a = 2.25;
@@ -10,23 +10,23 @@ float a, b;
    output(a + i);
    output(a - i);
 
-   b = i * a ;
+   b = i * a;
    output(b);
 
    b = b / i ;
    output(b);
 
 
-   i = (int) (3.0 + 5.8);
+   i = static_cast<int> (3.0 + 5.8);
    output (i);
 
-   i = (int) (3 + 5); /* this is legal - may elicit a warning */
+   i = static_cast<int> (3 + 5); /* this is legal - may elicit a warning */
    output(i);
 
-   a = (float) (3 + 5);
+   a = static_cast<float> (3 + 5);
    output(a);
 
-   a = (float) (3.0 + 5.0); /* this is legal- may elicit a warning */
+   a = static_cast<float> (3.0 + 5.0); /* this is legal- may elicit a warning */
    output(a);
 
 }

@@ -29,7 +29,7 @@ class Expression():
         self.temp = temp
 
 
-temp_variables_type_dict = {}
+temp_variables_values_dict = {}
 variables_type_dict = {}
 
 
@@ -43,8 +43,8 @@ def quad_code(code_operation):
         if type(code_operation) is not str:
             parser_error("code_operation should be string", code_operation)
             return False
-        elif len(code_operation.split()) > 3:
-            parser_error("code_operation can't be longer than 3 words", code_operation)
+        elif len(code_operation.split()) > 4:
+            parser_error("code_operation can't be longer than 4 words", code_operation)
             return False
         elif code_operation.split()[0] not in QUAD_OPCODES:
             parser_error(f"OPCODE {code_operation.split()[0]} is not define", code_operation)
@@ -61,12 +61,15 @@ def cast_type(expression, to_type):
         parser_error(f"coding error, can't cast to value: {to_type}", expression)
         raise
 
+    # If there is no need for casting, return the original expression.
     if expression.type == to_type:
-        return
-    expression.type = to_type
-    variables_type_dict[expression.temp] = to_type
-    to_type = int if to_type == "int" else "float"
-    temp_variables_type_dict[expression.temp] = to_type(temp_variables_type_dict[expression.temp])
+        return expression
+
+    convert_opcode = "RTOI" if to_type == "int" else "ITOR"
+    temp = next(g_generate_temp_variable_name)
+    quad_code(f"{convert_opcode} {temp} {expression.temp}")
+
+    return Expression(to_type, temp)
 
 
 class CplParser(Parser):
@@ -174,9 +177,9 @@ class CplParser(Parser):
             quad_code(f"{opdoce} {p.ID} {p.expression.temp}")
         elif variables_type_dict[p.ID] == "float":
             if p.expression.type == "int":
-                opcode = "ITOR"
+                convert_opcode = "ITOR"
                 temp_real = next(g_generate_temp_variable_name)
-                quad_code(f"{opcode} {temp_real} {p.expression.temp}")
+                quad_code(f"{convert_opcode} {temp_real} {p.expression.temp}")
             else:
                 temp_real = p.expression.temp
             quad_code(f"RASN {p.ID} {temp_real}")
@@ -194,7 +197,7 @@ class CplParser(Parser):
     @_("OUTPUT '(' expression ')' ';'")
     def output_stmt(self, p):
         opdoce = "IPRT" if p.expression.type == "int" else "RPRT"
-        value = temp_variables_type_dict[p.expression.temp]
+        value = temp_variables_values_dict[p.expression.temp]
         quad_code(f"{opdoce} {value}")
 
     @_("IF '(' boolexpr ')' stmt ELSE stmt")
@@ -264,7 +267,27 @@ class CplParser(Parser):
         :param p:
         :return:
         """
-        pass
+        if p.expression.type == p.term.type:
+            num_type = p.expression.type
+            first, second = p.expression.temp, p.term.temp
+        else:
+            num_type = "float"
+            if p.expression.type == "int":
+                to_convert = cast_type(p.expression, "float").temp
+                first, second = to_convert, p.term.temp
+            else:
+                to_convert = cast_type(p.term, "float").temp
+                first, second = p.expression.temp, to_convert
+
+        opcode_type = "I" if num_type == "int" else "R"
+        opcode_action = "ADD" if p.ADDOP == "+" else "SUB"
+        opcode = opcode_type + opcode_action
+
+        temp = next(g_generate_temp_variable_name)
+        temp_variables_values_dict[temp] = temp
+
+        quad_code(f"{opcode} {temp} {first} {second}")
+        return Expression(num_type, temp)
 
     @_("term")
     def expression(self, p):
@@ -272,12 +295,27 @@ class CplParser(Parser):
 
     @_("term MULOP factor")
     def term(self, p):
-        term_type = "int" if p.term == "int" and p.factor == "int" else "float"
-        if term_type == "float":
-            if p.term == "int":
-                cast_type(p.term, "float")
-            if p.factor == "int":
-                cast_type(p.factor, "float")
+        if p.term.type == p.factor.type:
+            num_type = p.term.type
+            first, second = p.term.temp, p.factor.temp
+        else:
+            num_type = "float"
+            if p.term.type == "int":
+                to_convert = cast_type(p.term, "float").temp
+                first, second = to_convert, p.factor.temp
+            else:
+                to_convert = cast_type(p.factor, "float").temp
+                first, second = p.term.temp, to_convert
+
+        opcode_type = "I" if num_type == "int" else "R"
+        opcode_action = "MLT" if p.MULOP == "*" else "DIV"
+        opcode = opcode_type + opcode_action
+
+        temp = next(g_generate_temp_variable_name)
+        temp_variables_values_dict[temp] = temp
+
+        quad_code(f"{opcode} {temp} {first} {second}")
+        return Expression(num_type, temp)
 
     @_("factor")
     def term(self, p):
@@ -289,19 +327,8 @@ class CplParser(Parser):
 
     @_("CAST '(' expression ')'")
     def factor(self, p):
-        # if p.CAST == "static_cast<int>" and p.expression.type:
-        #     pass
         num_type = "int" if p.CAST =="static_cast<int>" else "float"
-
-        # If there is no need for casting, return the original expression.
-        if num_type == p.expression.type:
-            return p.expression
-
-        opcode = "RTOI" if num_type == "int" else "ITOR"
-        temp = next(g_generate_temp_variable_name)
-        quad_code(f"{opcode} {temp} {p.expression.temp}")
-
-        return Expression(num_type, temp)
+        return cast_type(p.expression, num_type)
 
     @_("ID")
     def factor(self, p):
@@ -309,7 +336,7 @@ class CplParser(Parser):
 
         value = p.ID
         temp = next(g_generate_temp_variable_name)
-        temp_variables_type_dict[temp] = value
+        temp_variables_values_dict[temp] = value
 
         opdoce = "IASN" if num_type == "int" else "RASN"
         quad_code(f"{opdoce} {temp} {value}")
@@ -320,7 +347,7 @@ class CplParser(Parser):
         num_type = "float" if "." in p.NUM else "int"
         value = int(p.NUM) if num_type == "int" else float(p.NUM)
         temp = next(g_generate_temp_variable_name)
-        temp_variables_type_dict[temp] = value
+        temp_variables_values_dict[temp] = value
 
         opdoce = "IASN" if num_type == "int" else "RASN"
         quad_code(f"{opdoce} {temp} {value}")
