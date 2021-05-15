@@ -1,0 +1,18 @@
+RINP a
+RINP b
+RASN t_1 b
+RTOI t_2 t_1
+IASN c t_2
+RASN t_3 a
+IASN t_4 c
+ITOR t_5 t_4
+RLSS t_6 t_3 t_5
+JMPZ __ t_6
+JUMP __
+RASN t_7 a
+RPRT a
+JUMP __
+IASN t_8 c
+IPRT c
+HALT
+Student: Rea Haas

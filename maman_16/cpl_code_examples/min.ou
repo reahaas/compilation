@@ -1,11 +1,14 @@
 /* Min - Finding minimum between two numbers */
 a, b: float;
+c: int;
 {
-   read (a);
-   read (b);
+   input (a);
+   input (b);
 
-   if (a < b)
+   c = static_cast<int> (b);
+
+   if (a < c)
      output(a);
    else
-     output(b);
+     output(c);
 }

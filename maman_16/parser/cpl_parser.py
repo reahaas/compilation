@@ -29,11 +29,19 @@ class Expression():
         self.temp = temp
 
 
+class BoolListsObject():
+    def __init__(self, next_list, true_list, false_list):
+        self.next_list = next_list
+        self.true_list = true_list
+        self.false_list = false_list
+
+
+
 temp_variables_values_dict = {}
 variables_type_dict = {}
+qaud_lineno = 1
 
-
-def quad_code(code_operation):
+def qaud_code(code_operation):
     """
     This method warp the print function to prints the code operation that we want to generate.
     :param code_operation:
@@ -54,6 +62,8 @@ def quad_code(code_operation):
 
     if validate_quad_syntax():
         print(code_operation)
+        global qaud_lineno
+        qaud_lineno += 1
 
 
 def cast_type(expression, to_type):
@@ -67,9 +77,43 @@ def cast_type(expression, to_type):
 
     convert_opcode = "RTOI" if to_type == "int" else "ITOR"
     temp = next(g_generate_temp_variable_name)
-    quad_code(f"{convert_opcode} {temp} {expression.temp}")
+    qaud_code(f"{convert_opcode} {temp} {expression.temp}")
 
     return Expression(to_type, temp)
+
+
+def backpatch(instructions_list, jump_value):
+    pass
+
+
+def get_type_first_second_of_binary_operation(first_expression, second_expression):
+    """
+    This function take two Expressions objects, and detect the type of the return value:
+    1. int & int: int
+    2. int & float or float & int: float
+    :param first_expression:
+    :param second_expression:
+    :return: A tuple of three elemets:
+             1. num_type: the type of the value of the operations: int or float.
+             2. first: Expression object, that is the given first or a converted value of it.
+             3. second: Expression object, that is the given second or a converted value of it.
+    """
+    if first_expression.type == second_expression.type:
+        num_type = first_expression.type
+        first, second = first_expression.temp, second_expression.temp
+    else:
+        num_type = "float"
+        if first_expression.type == "int":
+            to_convert = cast_type(first_expression, "float").temp
+            first, second = to_convert, second_expression.temp
+        else:
+            to_convert = cast_type(second_expression, "float").temp
+            first, second = first_expression.temp, to_convert
+    return num_type, first, second
+
+
+def I_for_int_R_for_float(num_type):
+    return "I" if num_type == "int" else "R"
 
 
 class CplParser(Parser):
@@ -138,23 +182,26 @@ class CplParser(Parser):
 
     @_("assignment_stmt")
     def stmt(self, p):
-        pass
+        # return empty lists
+        return BoolListsObject([], [], [])
 
     @_("input_stmt")
     def stmt(self, p):
-        pass
+        # return empty lists
+        return BoolListsObject([], [], [])
 
     @_("output_stmt")
     def stmt(self, p):
-        pass
+        # return empty lists
+        return BoolListsObject([], [], [])
 
     @_("if_stmt")
     def stmt(self, p):
-        pass
+        return BoolListsObject(p.if_stmt.next_list, [], [])
 
     @_("while_stmt")
     def stmt(self, p):
-        pass
+        return BoolListsObject(p.while_stmt.next_list, [], [])
 
     @_("switch_stmt")
     def stmt(self, p):
@@ -166,7 +213,7 @@ class CplParser(Parser):
 
     @_("stmt_block")
     def stmt(self, p):
-        pass
+        return BoolListsObject(p.stmt_block.next_list, [], [])
 
     @_("ID '=' expression ';'")
     def assignment_stmt(self, p):
@@ -174,15 +221,15 @@ class CplParser(Parser):
             parser_error(f"Variable not defined: {p.ID}", p)
         elif variables_type_dict[p.ID] == p.expression.type:
             opdoce = "IASN" if variables_type_dict[p.ID] == "int" else "RASN"
-            quad_code(f"{opdoce} {p.ID} {p.expression.temp}")
+            qaud_code(f"{opdoce} {p.ID} {p.expression.temp}")
         elif variables_type_dict[p.ID] == "float":
             if p.expression.type == "int":
                 convert_opcode = "ITOR"
                 temp_real = next(g_generate_temp_variable_name)
-                quad_code(f"{convert_opcode} {temp_real} {p.expression.temp}")
+                qaud_code(f"{convert_opcode} {temp_real} {p.expression.temp}")
             else:
                 temp_real = p.expression.temp
-            quad_code(f"RASN {p.ID} {temp_real}")
+            qaud_code(f"RASN {p.ID} {temp_real}")
         else:
             parser_error(f"Can't assign float value {p.expression.temp} to int variable {p.ID}", p)
 
@@ -192,19 +239,35 @@ class CplParser(Parser):
             parser_error(f"Variable not defined: {p.ID}")
         else:
             opdoce = "IINP" if variables_type_dict[p.ID] == "int" else "RINP"
-            quad_code(f"{opdoce} {p.ID}")
+            qaud_code(f"{opdoce} {p.ID}")
 
     @_("OUTPUT '(' expression ')' ';'")
     def output_stmt(self, p):
         opdoce = "IPRT" if p.expression.type == "int" else "RPRT"
         value = temp_variables_values_dict[p.expression.temp]
-        quad_code(f"{opdoce} {value}")
+        qaud_code(f"{opdoce} {value}")
 
-    @_("IF '(' boolexpr ')' stmt ELSE stmt")
+    # good link for backpatching:
+    # https://www.ques10.com/p/9481/explain-back-patching-with-an-example-1/?
+    @_("IF '(' boolexpr ')' M stmt N ELSE M stmt")
     def if_stmt(self, p):
-        pass
+        backpatch(p.boolexpr.true_list, p.M1)
+        backpatch(p.boolexpr.false_list, p.M1)
+        temp = p.stmt0.next_list + p.N.next_list
+        next_list = temp + p.stmt1.next_list
+        return BoolListsObject(next_list, [], [])
 
-    @_("WHILE '(' boolexpr ')' stmt")
+    @_("")
+    def M(self, p):
+        return qaud_lineno + 1
+
+    @_("")
+    def N(self, p):
+        current_quad_lineno = qaud_lineno + 1
+        qaud_code('JUMP __')
+        return BoolListsObject([current_quad_lineno], [], [])
+
+    @_("WHILE M '(' boolexpr ')' M stmt")
     def while_stmt(self, p):
         pass
 
@@ -226,39 +289,59 @@ class CplParser(Parser):
 
     @_("'{' stmtlist '}'")
     def stmt_block(self, p):
-        pass
+        return BoolListsObject(p.stmtlist.next_list, [], [])
 
-    @_("stmtlist stmt")
+    @_("stmtlist M stmt")
     def stmtlist(self, p):
-        pass
+        backpatch(p.stmtlist.next_list, p.M)
+        return BoolListsObject([qaud_lineno], [], [])
 
     @_("")  # epsilon
     def stmtlist(self, p):
-        pass
+        # return empty lists
+        return BoolListsObject([], [], [])
 
     @_("boolexpr OR boolterm")
     def boolexpr(self, p):
-        pass
+        # todo implement
+        return BoolListsObject([], [], [])
 
     @_("boolterm")
     def boolexpr(self, p):
-        pass
+        return p.boolterm
 
     @_("boolterm AND boolfactor")
     def boolterm(self, p):
-        pass
+        # todo implement
+        return BoolListsObject([], [], [])
 
     @_("boolfactor")
     def boolterm(self, p):
-        pass
+        return p.boolfactor
 
     @_("NOT '(' boolexpr ')'")
     def boolfactor(self, p):
-        pass
+        return BoolListsObject([], p.boolexpr.false_list, p.boolexpr.true_list)
 
     @_("expression RELOP expression")
     def boolfactor(self, p):
-        pass
+
+        num_type, first, second = get_type_first_second_of_binary_operation(p.expression0, p.expression1)
+
+        temp_bool = next(g_generate_temp_variable_name)
+        opcode_type = I_for_int_R_for_float(num_type)
+        opcode_relation = opcode_type + "LSS"
+        qaud_code(f"{opcode_relation} {temp_bool} {first} {second}")
+
+        true_list = [qaud_lineno]
+        false_list = [qaud_lineno + 1]
+        return_list = BoolListsObject([], true_list, false_list)
+
+        qaud_code(f"JMPZ __ {temp_bool}")  # {true_list}
+        qaud_code(f"JUMP __")  # {false_list}
+
+        return return_list
+
 
     @_("expression ADDOP term")
     def expression(self, p):
@@ -267,26 +350,16 @@ class CplParser(Parser):
         :param p:
         :return:
         """
-        if p.expression.type == p.term.type:
-            num_type = p.expression.type
-            first, second = p.expression.temp, p.term.temp
-        else:
-            num_type = "float"
-            if p.expression.type == "int":
-                to_convert = cast_type(p.expression, "float").temp
-                first, second = to_convert, p.term.temp
-            else:
-                to_convert = cast_type(p.term, "float").temp
-                first, second = p.expression.temp, to_convert
+        num_type, first, second = get_type_first_second_of_binary_operation(p.expression, p.term)
 
-        opcode_type = "I" if num_type == "int" else "R"
+        opcode_type = I_for_int_R_for_float(num_type)
         opcode_action = "ADD" if p.ADDOP == "+" else "SUB"
         opcode = opcode_type + opcode_action
 
         temp = next(g_generate_temp_variable_name)
         temp_variables_values_dict[temp] = temp
 
-        quad_code(f"{opcode} {temp} {first} {second}")
+        qaud_code(f"{opcode} {temp} {first} {second}")
         return Expression(num_type, temp)
 
     @_("term")
@@ -295,26 +368,19 @@ class CplParser(Parser):
 
     @_("term MULOP factor")
     def term(self, p):
-        if p.term.type == p.factor.type:
-            num_type = p.term.type
-            first, second = p.term.temp, p.factor.temp
-        else:
-            num_type = "float"
-            if p.term.type == "int":
-                to_convert = cast_type(p.term, "float").temp
-                first, second = to_convert, p.factor.temp
-            else:
-                to_convert = cast_type(p.factor, "float").temp
-                first, second = p.term.temp, to_convert
 
-        opcode_type = "I" if num_type == "int" else "R"
+        first_expression = p.term
+        second_expression = p.factor
+        first, num_type, second = get_type_first_second_of_binary_operation(first_expression, second_expression)
+
+        opcode_type = I_for_int_R_for_float(num_type)
         opcode_action = "MLT" if p.MULOP == "*" else "DIV"
         opcode = opcode_type + opcode_action
 
         temp = next(g_generate_temp_variable_name)
         temp_variables_values_dict[temp] = temp
 
-        quad_code(f"{opcode} {temp} {first} {second}")
+        qaud_code(f"{opcode} {temp} {first} {second}")
         return Expression(num_type, temp)
 
     @_("factor")
@@ -339,7 +405,7 @@ class CplParser(Parser):
         temp_variables_values_dict[temp] = value
 
         opdoce = "IASN" if num_type == "int" else "RASN"
-        quad_code(f"{opdoce} {temp} {value}")
+        qaud_code(f"{opdoce} {temp} {value}")
         return Expression(num_type, temp)
 
     @_("NUM")
@@ -350,5 +416,5 @@ class CplParser(Parser):
         temp_variables_values_dict[temp] = value
 
         opdoce = "IASN" if num_type == "int" else "RASN"
-        quad_code(f"{opdoce} {temp} {value}")
+        qaud_code(f"{opdoce} {temp} {value}")
         return Expression(num_type, temp)
