@@ -38,3 +38,12 @@ QUAD_OPCODES = INT_OPCODES + \
                CONVERT_OPCODES + \
                JUMP_OPCODES + \
                HALT_OPCODE
+
+RELOP = {
+    "==": "EQL",
+    "!=": "NQL",
+    "<": "LSS",
+    ">": "GRT"
+    # ">=": "EQL",
+    # "<=": "EQL",
+}

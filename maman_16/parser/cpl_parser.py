@@ -1,7 +1,7 @@
 from sly import Parser
 
 from maman_16.lexer.cpl_lexer import CplLexer, print_err
-from maman_16.parser.consts import QUAD_OPCODES
+from maman_16.parser.consts import QUAD_OPCODES, RELOP
 
 
 def parser_error(message, p):
@@ -39,7 +39,12 @@ class BoolListsObject():
 
 temp_variables_values_dict = {}
 variables_type_dict = {}
+BACKPATCH = "__"
+
 qaud_lineno = 1
+
+qaud_code_structure = []
+
 
 def qaud_code(code_operation):
     """
@@ -61,7 +66,8 @@ def qaud_code(code_operation):
             return True
 
     if validate_quad_syntax():
-        print(code_operation)
+        qaud_code_structure.append(code_operation)
+        # print(code_operation)
         global qaud_lineno
         qaud_lineno += 1
 
@@ -83,7 +89,9 @@ def cast_type(expression, to_type):
 
 
 def backpatch(instructions_list, jump_value):
-    pass
+    for instructions in instructions_list:
+        asdf = qaud_code_structure[instructions - 1]
+        qaud_code_structure[instructions - 1] = qaud_code_structure[instructions - 1].replace(f"{BACKPATCH}", str(jump_value))
 
 
 def get_type_first_second_of_binary_operation(first_expression, second_expression):
@@ -140,7 +148,8 @@ class CplParser(Parser):
     def program(self, p):
         # todo remove the print.
         #print(f"declarations: {variables_type_dict}")
-        pass
+        for line in qaud_code_structure:
+            print(line)
 
     @_("declarations declaration")
     def declarations(self, p):
@@ -192,16 +201,16 @@ class CplParser(Parser):
 
     @_("output_stmt")
     def stmt(self, p):
-        # return empty lists
         return BoolListsObject([], [], [])
 
-    @_("if_stmt")
+    @_("if_stmt M")
     def stmt(self, p):
-        return BoolListsObject(p.if_stmt.next_list, [], [])
+        backpatch(p.if_stmt.next_list, p.M)
+        return p.if_stmt
 
     @_("while_stmt")
     def stmt(self, p):
-        return BoolListsObject(p.while_stmt.next_list, [], [])
+        return p.while_stmt
 
     @_("switch_stmt")
     def stmt(self, p):
@@ -213,7 +222,7 @@ class CplParser(Parser):
 
     @_("stmt_block")
     def stmt(self, p):
-        return BoolListsObject(p.stmt_block.next_list, [], [])
+        return p.stmt_block
 
     @_("ID '=' expression ';'")
     def assignment_stmt(self, p):
@@ -247,29 +256,34 @@ class CplParser(Parser):
         value = temp_variables_values_dict[p.expression.temp]
         qaud_code(f"{opdoce} {value}")
 
-    # good link for backpatching:
+    # Good link for backpatching:
+    # Credit giving: I used this with some adjustment to implement my code.
     # https://www.ques10.com/p/9481/explain-back-patching-with-an-example-1/?
     @_("IF '(' boolexpr ')' M stmt N ELSE M stmt")
     def if_stmt(self, p):
-        backpatch(p.boolexpr.true_list, p.M1)
+        backpatch(p.boolexpr.true_list, p.M0)
         backpatch(p.boolexpr.false_list, p.M1)
-        temp = p.stmt0.next_list + p.N.next_list
-        next_list = temp + p.stmt1.next_list
+        temp = p.stmt0.next_list + p.stmt1.next_list
+        next_list = p.N.next_list + temp
         return BoolListsObject(next_list, [], [])
 
     @_("")
     def M(self, p):
-        return qaud_lineno + 1
+        return qaud_lineno
 
     @_("")
     def N(self, p):
-        current_quad_lineno = qaud_lineno + 1
-        qaud_code('JUMP __')
+        current_quad_lineno = qaud_lineno
+        qaud_code(f'JUMP {BACKPATCH}')
         return BoolListsObject([current_quad_lineno], [], [])
 
     @_("WHILE M '(' boolexpr ')' M stmt")
     def while_stmt(self, p):
-        pass
+        backpatch(p.stmt.next_list, p.M0)  # stmt.next_list, p.M0)
+        backpatch(p.boolexpr.true_list, p.M1)
+
+        qaud_code(f"JUMP {p.M0}")
+        return BoolListsObject(p.boolexpr.true_list, [], [])
 
     @_("SWITCH '(' expression ')' '{' caselist DEFAULT ':' stmtlist '}'")
     def switch_stmt(self, p):
@@ -289,31 +303,38 @@ class CplParser(Parser):
 
     @_("'{' stmtlist '}'")
     def stmt_block(self, p):
-        return BoolListsObject(p.stmtlist.next_list, [], [])
+        return p.stmtlist
 
     @_("stmtlist M stmt")
     def stmtlist(self, p):
         backpatch(p.stmtlist.next_list, p.M)
-        return BoolListsObject([qaud_lineno], [], [])
+        return p.stmt
 
     @_("")  # epsilon
     def stmtlist(self, p):
         # return empty lists
         return BoolListsObject([], [], [])
 
-    @_("boolexpr OR boolterm")
+    @_("boolexpr OR M boolterm")
     def boolexpr(self, p):
-        # todo implement
-        return BoolListsObject([], [], [])
+        backpatch(p.boolexpr.false_list, p.M)
+
+        true_list = p.boolexpr.true_list + p.boolterm.true_list
+        false_list = p.boolterm.false_list
+        return BoolListsObject([], true_list, false_list)
 
     @_("boolterm")
     def boolexpr(self, p):
         return p.boolterm
 
-    @_("boolterm AND boolfactor")
+    @_("boolterm AND M boolfactor")
     def boolterm(self, p):
-        # todo implement
-        return BoolListsObject([], [], [])
+        backpatch(p.boolterm.true_list, p.M)
+
+        true_list = p.boolfactor.true_list
+        false_list = p.boolterm.false_list + p.boolfactor.false_list
+        return BoolListsObject([], true_list, false_list)
+
 
     @_("boolfactor")
     def boolterm(self, p):
@@ -330,15 +351,16 @@ class CplParser(Parser):
 
         temp_bool = next(g_generate_temp_variable_name)
         opcode_type = I_for_int_R_for_float(num_type)
-        opcode_relation = opcode_type + "LSS"
-        qaud_code(f"{opcode_relation} {temp_bool} {first} {second}")
+        opcode_relation = RELOP[p.RELOP]
+        opcode = opcode_type + opcode_relation
+        qaud_code(f"{opcode} {temp_bool} {first} {second}")
 
-        true_list = [qaud_lineno]
-        false_list = [qaud_lineno + 1]
+        false_list= [qaud_lineno]
+        true_list = [qaud_lineno + 1]
         return_list = BoolListsObject([], true_list, false_list)
 
-        qaud_code(f"JMPZ __ {temp_bool}")  # {true_list}
-        qaud_code(f"JUMP __")  # {false_list}
+        qaud_code(f"JMPZ {BACKPATCH} {temp_bool}")  # {true_list}
+        qaud_code(f"JUMP {BACKPATCH}")  # {false_list}
 
         return return_list
 
