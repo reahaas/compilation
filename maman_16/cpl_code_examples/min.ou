@@ -7,8 +7,8 @@ c: int;
 
    c = static_cast<int> (b);
 
-   if (a < c)
+   if (a < b)
      output(a);
    else
-     output(c);
+     output(b);
 }
