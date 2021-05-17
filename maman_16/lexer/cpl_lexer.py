@@ -63,7 +63,7 @@ class CplLexer(Lexer):
     # Regular expression rules for tokens
 
     # operators:
-    RELOP = r'==|!=|<|>|>=|<='
+    RELOP = r'==|!=|>=|<=|<|>'
     ADDOP = r'\+|-'
     MULOP = r'\*|/'
     OR = r'\|\|'
