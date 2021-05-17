@@ -262,6 +262,14 @@ class CplParser(Parser):
     # https://www.ques10.com/p/9481/explain-back-patching-with-an-example-1/?
     @_("IF '(' boolexpr ')' M stmt N ELSE M stmt")
     def if_stmt(self, p):
+        # Notice!:
+        # I swapped the true_list/false_list backpatching from the guide I pasted,
+        # since the jump commands in the QAUD language not working as:
+        #     if boolexpr then goto ADDRESS_TRUE;
+        #     goto ADDRESS_FALSE;
+        # but they working as:
+        #     JMPZ ADDRESS_FALSE boolexpr
+        #     JUMP ADDRESS_TRUE
         backpatch(p.boolexpr.true_list, p.M0)
         backpatch(p.boolexpr.false_list, p.M1)
         temp = p.stmt0.next_list + p.stmt1.next_list
