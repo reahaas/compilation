@@ -1,0 +1,36 @@
+/* Min - Finding minimum between two numbers */
+a, b, c: float;
+d: int;
+{
+   input (a);
+   input (b);
+
+   c = a + b;
+   d = static_cast<int> (c);
+
+   switch (d) {
+      case 1:
+         output(1);
+      case 2:
+         output(2);
+         output(2);
+         break;
+      case 3:
+         output(3);
+         output(3);
+         if (a==3)
+            output(a);
+         else
+            output(b);
+         break;
+      case 4:
+         output(4);
+         output(4);
+         output(4);
+         output(4);
+         break;
+      default:
+         output(10);
+   }
+
+}
