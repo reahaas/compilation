@@ -1,0 +1,24 @@
+IASN t_1 0
+IASN a t_1
+IASN t_2 1
+IASN b t_2
+IASN t_3 a
+IASN t_4 1000
+ILSS t_5 t_3 t_4
+JMPZ 21 t_5
+JUMP 10
+IASN t_6 a
+IPRT a
+IASN t_7 a
+IASN t_8 b
+IADD t_9 t_7 t_8
+IASN c t_9
+IASN t_10 b
+IASN a t_10
+IASN t_11 c
+IASN b t_11
+JUMP 5
+IASN t_12 a
+IPRT a
+HALT
+Student: Rea Haas
