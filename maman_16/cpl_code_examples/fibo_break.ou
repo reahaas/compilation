@@ -1,4 +1,6 @@
 /* print fibonacci sequence */
+/* Only numbers greater than 200 */
+/* print the numbers twice. */
 a, b, c: int;
 {
     a = 0;
@@ -9,6 +11,10 @@ a, b, c: int;
        c = a + b;
        a = b;
        b = c;
+       if (a < 200)
+           break;
+       else
+           output(a);
        output(a);
     }
 	output(a);

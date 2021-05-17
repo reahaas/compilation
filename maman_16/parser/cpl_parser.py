@@ -30,10 +30,11 @@ class Expression():
 
 
 class BoolListsObject():
-    def __init__(self, next_list, true_list, false_list):
+    def __init__(self, next_list, true_list, false_list, break_list):
         self.next_list = next_list
         self.true_list = true_list
         self.false_list = false_list
+        self.break_list = break_list
 
 
 
@@ -192,16 +193,16 @@ class CplParser(Parser):
     @_("assignment_stmt")
     def stmt(self, p):
         # return empty lists
-        return BoolListsObject([], [], [])
+        return BoolListsObject([], [], [], [])
 
     @_("input_stmt")
     def stmt(self, p):
         # return empty lists
-        return BoolListsObject([], [], [])
+        return BoolListsObject([], [], [], [])
 
     @_("output_stmt")
     def stmt(self, p):
-        return BoolListsObject([], [], [])
+        return BoolListsObject([], [], [], [])
 
     @_("if_stmt M")
     def stmt(self, p):
@@ -219,7 +220,7 @@ class CplParser(Parser):
 
     @_("break_stmt")
     def stmt(self, p):
-        pass
+        return p.break_stmt
 
     @_("stmt_block")
     def stmt(self, p):
@@ -272,9 +273,12 @@ class CplParser(Parser):
         #     JUMP ADDRESS_TRUE
         backpatch(p.boolexpr.true_list, p.M0)
         backpatch(p.boolexpr.false_list, p.M1)
-        temp = p.stmt0.next_list + p.stmt1.next_list
-        next_list = p.N.next_list + temp
-        return BoolListsObject(next_list, [], [])
+        next_list = p.N.next_list + p.stmt0.next_list + p.stmt1.next_list
+
+        # To support BREAK statements:
+        break_list = p.stmt0.break_list + p.stmt1.break_list
+
+        return BoolListsObject(next_list, [], [], break_list)
 
     @_("")
     def M(self, p):
@@ -284,15 +288,17 @@ class CplParser(Parser):
     def N(self, p):
         current_quad_lineno = qaud_lineno
         qaud_code(f'JUMP {BACKPATCH}')
-        return BoolListsObject([current_quad_lineno], [], [])
+        return BoolListsObject([current_quad_lineno], [], [], [])
 
     @_("WHILE M '(' boolexpr ')' M stmt")
     def while_stmt(self, p):
         backpatch(p.stmt.next_list, p.M0)
         backpatch(p.boolexpr.true_list, p.M1)
+        # To support BREAK statements:
+        backpatch(p.stmt.break_list, p.M0)
 
         qaud_code(f"JUMP {p.M0}")
-        return BoolListsObject(p.boolexpr.false_list, [], [])
+        return BoolListsObject(p.boolexpr.false_list, [], [], [])
 
     @_("SWITCH '(' expression ')' '{' caselist DEFAULT ':' stmtlist '}'")
     def switch_stmt(self, p):
@@ -306,9 +312,9 @@ class CplParser(Parser):
     def caselist(self, p):
         pass
 
-    @_("BREAK ';'")
+    @_("N BREAK ';'")
     def break_stmt(self, p):
-        pass
+        return BoolListsObject([], [], [], p.N.next_list)
 
     @_("'{' stmtlist '}'")
     def stmt_block(self, p):
@@ -317,12 +323,19 @@ class CplParser(Parser):
     @_("stmtlist M stmt")
     def stmtlist(self, p):
         backpatch(p.stmtlist.next_list, p.M)
-        return p.stmt
+
+        # To support BREAK statements:
+        break_list = p.stmtlist.break_list + p.stmt.break_list
+
+        return BoolListsObject(p.stmt.next_list,
+                               p.stmt.true_list,
+                               p.stmt.false_list,
+                               break_list)
 
     @_("")  # epsilon
     def stmtlist(self, p):
         # return empty lists
-        return BoolListsObject([], [], [])
+        return BoolListsObject([], [], [], [])
 
     @_("boolexpr OR M boolterm")
     def boolexpr(self, p):
@@ -330,7 +343,7 @@ class CplParser(Parser):
 
         true_list = p.boolexpr.true_list + p.boolterm.true_list
         false_list = p.boolterm.false_list
-        return BoolListsObject([], true_list, false_list)
+        return BoolListsObject([], true_list, false_list, [])
 
     @_("boolterm")
     def boolexpr(self, p):
@@ -342,7 +355,7 @@ class CplParser(Parser):
 
         true_list = p.boolfactor.true_list
         false_list = p.boolterm.false_list + p.boolfactor.false_list
-        return BoolListsObject([], true_list, false_list)
+        return BoolListsObject([], true_list, false_list, [])
 
 
     @_("boolfactor")
@@ -351,7 +364,7 @@ class CplParser(Parser):
 
     @_("NOT '(' boolexpr ')'")
     def boolfactor(self, p):
-        return BoolListsObject([], p.boolexpr.false_list, p.boolexpr.true_list)
+        return BoolListsObject([], p.boolexpr.false_list, p.boolexpr.true_list, [])
 
     @_("expression RELOP expression")
     def boolfactor(self, p):
@@ -366,7 +379,7 @@ class CplParser(Parser):
 
         false_list = [qaud_lineno]
         true_list = [qaud_lineno + 1]
-        return_list = BoolListsObject([], true_list, false_list)
+        return_list = BoolListsObject([], true_list, false_list, [])
 
         qaud_code(f"JMPZ {BACKPATCH} {temp_bool}")  # {false_list}
         qaud_code(f"JUMP {BACKPATCH}")  # {true_list}
