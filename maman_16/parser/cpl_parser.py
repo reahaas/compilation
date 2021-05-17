@@ -208,8 +208,9 @@ class CplParser(Parser):
         backpatch(p.if_stmt.next_list, p.M)
         return p.if_stmt
 
-    @_("while_stmt")
+    @_("while_stmt M")
     def stmt(self, p):
+        backpatch(p.while_stmt.next_list, p.M)
         return p.while_stmt
 
     @_("switch_stmt")
@@ -277,14 +278,10 @@ class CplParser(Parser):
         qaud_code(f'JUMP {BACKPATCH}')
         return BoolListsObject([current_quad_lineno], [], [])
 
-    @_("WHILE M '(' boolexpr ')' M stmt M")
+    @_("WHILE M '(' boolexpr ')' M stmt")
     def while_stmt(self, p):
         backpatch(p.stmt.next_list, p.M0)
         backpatch(p.boolexpr.true_list, p.M1)
-
-        # This is the calculation of the address to jump when going out of the while loop.
-        post_while_address = p.M2 + 1
-        backpatch(p.boolexpr.false_list, post_while_address)
 
         qaud_code(f"JUMP {p.M0}")
         return BoolListsObject(p.boolexpr.false_list, [], [])
