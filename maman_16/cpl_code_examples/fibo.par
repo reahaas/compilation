@@ -8,15 +8,15 @@ ILSS t_5 t_3 t_4
 JMPZ 21 t_5
 JUMP 10
 IASN t_6 a
+IASN t_7 b
+IADD t_8 t_6 t_7
+IASN c t_8
+IASN t_9 b
+IASN a t_9
+IASN t_10 c
+IASN b t_10
+IASN t_11 a
 IPRT a
-IASN t_7 a
-IASN t_8 b
-IADD t_9 t_7 t_8
-IASN c t_9
-IASN t_10 b
-IASN a t_10
-IASN t_11 c
-IASN b t_11
 JUMP 5
 IASN t_12 a
 IPRT a

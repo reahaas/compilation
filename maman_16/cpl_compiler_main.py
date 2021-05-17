@@ -6,6 +6,12 @@ from maman_16.parser.cpl_parser import CplParser
 cpl_file_suffix = ".ou"
 
 
+def strip_end(text, suffix):
+    if suffix and text.endswith(suffix):
+        return text[:-len(suffix)]
+    return text
+
+
 def main(file_name):
     try:
         with open(file_name) as input_file:
@@ -19,7 +25,7 @@ def main(file_name):
 
     original_stdout = sys.stdout  # Save a reference to the original standard output
 
-    file_name_w = file_name.rstrip(cpl_file_suffix) + ".par"
+    file_name_w = strip_end(file_name, cpl_file_suffix) + ".par"
     with open(file_name_w, 'w') as f:
         sys.stdout = f  # Change the standard output to the file we created.
 
