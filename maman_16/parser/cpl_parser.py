@@ -37,6 +37,12 @@ class BoolListsObject():
         self.break_list = break_list
 
 
+class CaseListsObject():
+    def __init__(self, next_list, case_list, break_list):
+        self.next_list = next_list
+        self.case_list = case_list
+        self.break_list = break_list
+
 
 temp_variables_values_dict = {}
 variables_type_dict = {}
@@ -147,8 +153,6 @@ class CplParser(Parser):
 
     @_("declarations stmt_block")
     def program(self, p):
-        # todo remove the print.
-        #print(f"declarations: {variables_type_dict}")
         for line in qaud_code_structure:
             print(line)
 
@@ -214,9 +218,10 @@ class CplParser(Parser):
         backpatch(p.while_stmt.next_list, p.M)
         return p.while_stmt
 
-    @_("switch_stmt")
+    @_("switch_stmt M")
     def stmt(self, p):
-        pass
+        backpatch(p.switch_stmt.next_list, p.M)
+        return p.switch_stmt
 
     @_("break_stmt")
     def stmt(self, p):
@@ -300,17 +305,50 @@ class CplParser(Parser):
         qaud_code(f"JUMP {p.M0}")
         return BoolListsObject(p.boolexpr.false_list, [], [], [])
 
-    @_("SWITCH '(' expression ')' '{' caselist DEFAULT ':' stmtlist '}'")
+    @_("SWITCH '(' expression ')' N '{' caselist DEFAULT ':' M stmtlist N '}' M")
     def switch_stmt(self, p):
-        pass
+        if p.expression.type != "int":
+            parser_error("Switch-case expression must be int!", p)
 
-    @_("caselist CASE NUM ':' stmtlist")
+        # The switch action first jump to the cases jumps section
+        backpatch(p.N0.next_list, p.M1)
+
+        # This list is all the places to backpath to go out of the switch-case block
+        next_list = p.caselist.break_list + p.stmtlist.next_list + p.N1.next_list
+
+        # Place jump commands for the cases.
+        for case in p.caselist.case_list:
+            case_num = case[0]
+            case_address = case[1]
+            temp_case = next(g_generate_temp_variable_name)
+            qaud_code(f"INQL {temp_case} {case_num} {p.expression.temp}")
+            qaud_code(f"JMPZ {case_address} {temp_case}")
+
+        # This jump is for the DEFAULT action
+        qaud_code(f"JUMP {p.M0}")
+
+        return BoolListsObject(next_list, [], [], [])
+
+    @_("caselist CASE NUM ':' M stmtlist")
     def caselist(self, p):
-        pass
+        num_type = "float" if "." in p.NUM else "int"
+        num_value = int(p.NUM)
+        if num_type != "int":
+            parser_error("Switch-case expression must be int!", p)
+
+        backpatch(p.caselist.next_list, p.M)
+
+        break_list = p.caselist.break_list + p.stmtlist.break_list
+        next_list = p.stmtlist.next_list
+        # Build cases list:
+        current_case = [(num_value, p.M)]
+        case_list = p.caselist.case_list + current_case
+
+        return CaseListsObject(next_list, case_list, break_list)
 
     @_("")  # epsilon
     def caselist(self, p):
-        pass
+        return CaseListsObject([], [], [])
 
     @_("N BREAK ';'")
     def break_stmt(self, p):
