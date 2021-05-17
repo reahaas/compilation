@@ -411,6 +411,20 @@ class CplParser(Parser):
 
         temp_bool = next(g_generate_temp_variable_name)
         opcode_type = I_for_int_R_for_float(num_type)
+
+        # To support ["<=", ">="] we need to add/subtract 1 and use the same logic with ["<", ">"]
+        if p.RELOP in ["<=", ">="]:
+            # Identify the addition: 1 or -1, int or float.
+            addition_for_equality = 1 if p.RELOP == "<=" else -1
+            if opcode_type == "R":
+                addition_for_equality = float(addition_for_equality)
+
+            # Write action to add "addition_for_equality" to the second variable
+            opcode_for_equality = opcode_type + "ADD"
+            temp_for_equality = next(g_generate_temp_variable_name)
+            qaud_code(f"{opcode_for_equality} {temp_for_equality} {second} {addition_for_equality}")
+            second = temp_for_equality
+
         opcode_relation = RELOP[p.RELOP]
         opcode = opcode_type + opcode_relation
         qaud_code(f"{opcode} {temp_bool} {first} {second}")
