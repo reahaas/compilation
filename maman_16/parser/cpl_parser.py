@@ -159,6 +159,11 @@ class CplParser(Parser):
 
     @_("declarations stmt_block")
     def program(self, p):
+        # If there is any break left in the program that didn't handled by while/switch statements,
+        # Then we have a syntax error of: using break in an invalid scope.
+        if p.stmt_block.break_list:
+            parser_error(f"BREAK statement is allowed only as part of while/switch blocks.", p)
+
         results = ""
         for line in qaud_code_structure:
             results += f"{line}\n"
