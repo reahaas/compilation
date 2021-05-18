@@ -24,11 +24,11 @@ cd compilation
 export PYTHONPATH=$(pwd)
 
 # run:
-python3 maman_16/cpl_compiler_main.py cpl_code_examples/fibo.ou
+python3 maman_16/cpl_compiler_main.py maman_16/cpl_code_examples/fibo.ou
 # This will produce the file "fibo.par" in the same location as the given file.
 
 # Test: run the qaud file with the qaud interater:
-python3 qaud_interpater.py cpl_code_examples/fibo.par
+python3 maman_16/qaud_interpater.py maman_16/cpl_code_examples/fibo.par
 ```
 
 ## Running examples:
