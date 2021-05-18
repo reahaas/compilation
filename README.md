@@ -15,9 +15,13 @@ sudo pip3 install sly
 ```
 
 ## Running the compiler:
+### Linux - Ubuntu
 ```
 # Go to running location:
 cd compilation
+
+# Add compilation dir to python path:
+export PYTHONPATH=$(pwd)
 
 # run:
 python3 maman_16/cpl_compiler_main.py cpl_code_examples/fibo.ou
