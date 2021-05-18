@@ -4,9 +4,15 @@ from maman_16.lexer.cpl_lexer import CplLexer, print_err
 from maman_16.parser.consts import QUAD_OPCODES, RELOP
 
 
+is_valid_cpl_code = True
+
+
 def parser_error(message, p):
     line_number = p.lineno if hasattr(p, "lineno") else "compilier code"
     print_err(f"PARSER error: line number: {line_number}, {message}, {p}")
+
+    # Flag to indicate the program contains errors.
+    is_valid_cpl_code = False
 
 
 def generate_temp_variable_name():
@@ -153,8 +159,10 @@ class CplParser(Parser):
 
     @_("declarations stmt_block")
     def program(self, p):
+        results = ""
         for line in qaud_code_structure:
-            print(line)
+            results += f"{line}\n"
+        return results, is_valid_cpl_code
 
     @_("declarations declaration")
     def declarations(self, p):

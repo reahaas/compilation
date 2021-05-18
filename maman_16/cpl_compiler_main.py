@@ -1,3 +1,4 @@
+import os
 import sys
 
 from maman_16.lexer.cpl_lexer import CplLexer, print_err
@@ -23,20 +24,24 @@ def main(file_name):
     lexer = CplLexer()
     parser = CplParser()
 
-    original_stdout = sys.stdout  # Save a reference to the original standard output
-
     file_name_w = strip_end(file_name, cpl_file_suffix) + ".par"
     with open(file_name_w, 'w') as f:
-        sys.stdout = f  # Change the standard output to the file we created.
 
-        result = parser.parse(lexer.tokenize(input_text))
-        # f.write(f"Results: {str(result)}")
-        f.write("HALT\n")
-        f.write("Student: Rea Haas")
+        code, is_valid_cpl_code = parser.parse(lexer.tokenize(input_text)) or ("", False)
 
-        sys.stdout = original_stdout  # Reset the standard output to its original value
-        print(result)
-        print("Student: Rea Haas")
+        if is_valid_cpl_code:
+            original_stdout = sys.stdout  # Save a reference to the original standard output
+            sys.stdout = f  # Change the standard output to the file we created.
+
+            f.write(code)
+            f.write("HALT\n")
+            f.write("Student: Rea Haas")
+
+            sys.stdout = original_stdout  # Reset the standard output to its original value
+        else:
+            print_err(f"PARSER error: line number: General, is_valid_cpl_code=False")
+    if not is_valid_cpl_code:
+       os.remove(file_name_w)
 
 
 if __name__ == '__main__':
